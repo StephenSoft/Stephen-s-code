@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+	attr_accessor :remember_token
 	before_save { self.email = self.email.downcase }
 #	validates :name, presence: true
 	validates(:name, presence: true, length:{ maximum: 50 })
@@ -16,4 +17,28 @@ class User < ApplicationRecord
 																					        BCrypt::Engine.cost  																										
 		BCrypt::Password.create(string, cost: cost)
 	end
+	
+	#返回一個隨機令牌
+	def User.new_token
+		SecureRandom.urlsafe_base64
+	end
+	
+	#爲了持久保存會話，在數據庫中記住用戶
+	def remember
+		self.remember_token = User.new_token
+		update_attribute(:remember_digest, User.digest(remember_token))
+	end
+  
+  #如果指定的令牌和摘要匹配，返回true
+  def authenticated?(remember_token)
+  	return false if remember_digest.nil?
+  	BCrypt::Password.new(remember_digest).is_password?(remember_token)
+  end
+  
+  def forget
+  	update_attribute(:remember_digest,nil)
+  end
+  
+  
+  
 end
